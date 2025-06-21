@@ -119,6 +119,10 @@ const std::string CYAN_UNDERLINED_B = "\033[4;36m";   // CYAN
 const std::string WHITE_UNDERLINED = "\033[4;37m";  // WHITE
 const std::string WHITE_UNDERLINED_B = "\033[4;37m";  // WHITE
 
+void __cdecl GlobalFileTraceInit(const char* pFileName);
+void __cdecl GlobalFileTraceDestroy();
+void __cdecl GlobalFileTrace(const char* pNChannel, const char* pNFormat, ...);
+void __cdecl FileTraceHelper(const char* pFileName, const char* pNChannel, const char* pNFormat, ...);
 void __cdecl ConsoleOutNoRl( std::string color, const char *format, ...);
 void __cdecl ConsoleOut( std::string color, const char *format, ...);
 void __cdecl SystemDebugOutput(const wchar_t *channel, const char *format, ...);
@@ -130,6 +134,11 @@ void __cdecl ConsoleTitle(const char *format, std::string color = CYAN_UNDERLINE
 void __cdecl ConsoleInfo(const char *format, std::string color = WHITE_UNDERLINED_B);
 void __cdecl ConsoleTrace( std::string color, const char *format, ...);
 # define COUTCMD( ... ) { ConsoleLog(  __VA_ARGS__ );  }	
+
+#define GFILE_TRACE_INIT GlobalFileTraceInit
+#define GFILE_TRACE_DESTROY GlobalFileTraceDestroy
+#define GFILE_TRACE(channel, ...) GlobalFileTrace(channel, ...)
+#define FILE_TRACE FileTraceHelper
 
 # define COUTYRL( ... ) { ConsoleOutNoRl(YELLOW_UNDERLINED,  __VA_ARGS__ );  } 
 # define COUTBM( ... )  { ConsoleOutNoRl(CONSOLE_COLOR_YELLOW_BRIGHT,  __VA_ARGS__ );  } 

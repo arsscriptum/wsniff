@@ -2,8 +2,8 @@
 #define __LOG_H__
 
 #include <stdio.h>
-#include "../../ws.h"
-#include "../../list.h"
+#include "ws.h"
+#include "internal_list.h"
 
 #define LOG(x,...) do { __mingw_printf(x, ##__VA_ARGS__); __mingw_printf("\n"); } while(0)
 #define LOGn(x,...) __mingw_printf(x, ##__VA_ARGS__) //Log without newline

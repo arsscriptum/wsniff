@@ -111,7 +111,7 @@ endif
 
 # FORCE DEJA_DISABLED, no libs...
 ifeq ($(BUILD_PLATFORM),x86)
-	DEJAINSIGHT_ENABLED := no 
+	DEJAINSIGHT_ENABLED := no
 	PLATFORM_DEFINE := __PLATFORM_X86__
 	COMPILATION_PREPROCESSOR_DEFS += -DWIN32 -D_WIN32 -D$(PLATFORM_DEFINE)
 else ifeq ($(BUILD_PLATFORM),x64)
@@ -147,7 +147,7 @@ endif
 COMPILATION_FLAGS += $(COMPILATION_PREPROCESSOR_DEFS)
 LDFLAGS += $(LINKING_LIBRARIES)
 
-SOURCES := $(foreach FILE,$(SOURCE),$(FILE).c)
+SOURCES := $(foreach FILE,$(SOURCE),$(FILE).cpp)
 O_SOURCE := $(foreach FILE,$(SOURCES),$(SRC)/$(FILE))
 
 OBJ := $(foreach FILE,$(SOURCE),$(FILE).o)
@@ -208,10 +208,10 @@ clean:
 $(TARGET_OUT): $(O_OBJS)
 	$(COMPILR_BIN) -o $@ $(O_OBJS) $(LDFLAGS)
 
-$(BUILD)/%.o: $(SRC)/%.c
-	$(COMPILR_BIN) -c $(COMPILATION_FLAGS) $(SRC)/$*.c -o $@
+$(BUILD)/%.o: $(SRC)/%.cpp
+	$(COMPILR_BIN) -c $(COMPILATION_FLAGS) $(SRC)/$*.cpp -o $@
 
-$(SRC)/%.c: $(SRC)/%.h
+$(SRC)/%.cpp: $(SRC)/%.h
 
 #Plugins
 $(PLUGINSRC):

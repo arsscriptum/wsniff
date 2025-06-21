@@ -15,6 +15,90 @@
 #include <ctype.h>
 #include <wtypes.h>
 
+#include <cstdio>
+#include <cstdarg>
+#include <cstring>
+#include <ctime>
+#include <mutex>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
+bool IsGlobalFileTraceInitialized = false;
+FILE *GlobalLogFilePtr = nullptr;
+
+void __cdecl GlobalFileTrace(const char* pNChannel, const char* pNFormat, ...){
+    static std::mutex logMutex;
+    std::lock_guard<std::mutex> lock(logMutex);
+
+    if ((!GlobalLogFilePtr) || (!IsGlobalFileTraceInitialized)) return;
+
+    // Optional: add timestamp
+    std::time_t now = std::time(nullptr);
+    std::tm* localTime = std::localtime(&now);
+    char timeStr[64];
+    std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", localTime);
+
+    // Format the message
+    char message[2048];
+    va_list args;
+    va_start(args, pNFormat);
+    std::vsnprintf(message, sizeof(message), pNFormat, args);
+    va_end(args);
+
+    // Final log line
+    std::fprintf(GlobalLogFilePtr, "[%s] %s: %s\n", timeStr, pNChannel, message);
+}
+
+void __cdecl GlobalFileTraceDestroy(){
+    static std::mutex logMutex;
+    std::lock_guard<std::mutex> lock(logMutex);
+
+    std::fclose(GlobalLogFilePtr);
+	GlobalLogFilePtr = nullptr;
+	IsGlobalFileTraceInitialized = false;
+}
+
+void __cdecl GlobalFileTraceInit(const char* pFileName){
+    static std::mutex logMutex;
+    std::lock_guard<std::mutex> lock(logMutex);
+
+    GlobalLogFilePtr = std::fopen(pFileName, "a");
+    if (GlobalLogFilePtr){
+		IsGlobalFileTraceInitialized = true;
+	}
+}
+
+void __cdecl FileTraceHelper(const char* pFileName, const char* pNChannel, const char* pNFormat, ...) {
+    static std::mutex logMutex;
+    std::lock_guard<std::mutex> lock(logMutex);
+
+    FILE* file = std::fopen(pFileName, "a");
+    if (!file) return;
+
+    // Optional: add timestamp
+    std::time_t now = std::time(nullptr);
+    std::tm* localTime = std::localtime(&now);
+    char timeStr[64];
+    std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", localTime);
+
+    // Format the message
+    char message[2048];
+    va_list args;
+    va_start(args, pNFormat);
+    std::vsnprintf(message, sizeof(message), pNFormat, args);
+    va_end(args);
+
+    // Final log line
+    std::fprintf(file, "[%s] %s: %s\n", timeStr, pNChannel, message);
+    std::fclose(file);
+}
+
+
 //==============================================================================
 // ConsoleOut
 // Used by the ServiceTerminal

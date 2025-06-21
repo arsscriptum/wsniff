@@ -32,6 +32,17 @@ static DWORD orig_size_recv = 0;
 static UINT_PTR  addr_send = 0; 
 static UINT_PTR  addr_recv = 0;
 
+LIBRARY_API DWORD register_handler2(tWS_plugin func, uint8_t tval, const char *comment)
+{
+	WS_HANDLER_TYPE type = (WS_HANDLER_TYPE)tval;
+	return register_handler(func,type,comment);
+}
+LIBRARY_API void unregister_handler2(DWORD plugin_id, uint8_t tval)
+{
+	WS_HANDLER_TYPE type = (WS_HANDLER_TYPE)tval;
+	return unregister_handler(plugin_id,type);	
+}
+
 LIBRARY_API DWORD register_handler(tWS_plugin func, WS_HANDLER_TYPE type, const char *comment)
 {
 	if(comment == NULL)

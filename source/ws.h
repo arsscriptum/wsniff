@@ -31,6 +31,8 @@ struct WS_plugins
     struct list_head plugins;
 };
 
+LIBRARY_API DWORD register_handler2(tWS_plugin func, uint8_t tval, const char *comment);
+LIBRARY_API void unregister_handler2(DWORD plugin_id, uint8_t tval);
 LIBRARY_API DWORD register_handler(tWS_plugin func, WS_HANDLER_TYPE type, const char *comment);
 LIBRARY_API void unregister_handler(DWORD plugin_id, WS_HANDLER_TYPE type);
 
