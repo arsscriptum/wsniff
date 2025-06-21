@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <ctime>
-
+#include "../targetver.h"
 #ifndef DEJA_DISABLED
 	#include "DejaLib.h"
 #endif
@@ -119,25 +119,25 @@ const std::string CYAN_UNDERLINED_B = "\033[4;36m";   // CYAN
 const std::string WHITE_UNDERLINED = "\033[4;37m";  // WHITE
 const std::string WHITE_UNDERLINED_B = "\033[4;37m";  // WHITE
 
-void __cdecl GlobalFileTraceInit(const char* pFileName);
-void __cdecl GlobalFileTraceDestroy();
-void __cdecl GlobalFileTrace(const char* pNChannel, const char* pNFormat, ...);
-void __cdecl FileTraceHelper(const char* pFileName, const char* pNChannel, const char* pNFormat, ...);
-void __cdecl ConsoleOutNoRl( std::string color, const char *format, ...);
-void __cdecl ConsoleOut( std::string color, const char *format, ...);
-void __cdecl SystemDebugOutput(const wchar_t *channel, const char *format, ...);
-void __cdecl ConsoleLog(const char *format, ...);
-void __cdecl ConsoleProcess(unsigned int id,const char *name);
-void __cdecl ConsoleProcessDenied(unsigned int id,const char *name);
-void __cdecl ConsoleProcessPath(unsigned int id,const char *name,const char *path);
-void __cdecl ConsoleTitle(const char *format, std::string color = CYAN_UNDERLINED_B);
-void __cdecl ConsoleInfo(const char *format, std::string color = WHITE_UNDERLINED_B);
-void __cdecl ConsoleTrace( std::string color, const char *format, ...);
+void MYAPI GlobalFileTraceInit(const char* pFileName);
+void MYAPI GlobalFileTraceDestroy();
+void MYAPI GlobalFileTrace(const char* pNChannel, const char* pNFormat, ...);
+void MYAPI FileTraceHelper(const char* pFileName, const char* pNChannel, const char* pNFormat, ...);
+void MYAPI ConsoleOutNoRl( std::string color, const char *format, ...);
+void MYAPI ConsoleOut( std::string color, const char *format, ...);
+void MYAPI SystemDebugOutput(const wchar_t *channel, const char *format, ...);
+void MYAPI ConsoleLog(const char *format, ...);
+void MYAPI ConsoleProcess(unsigned int id,const char *name);
+void MYAPI ConsoleProcessDenied(unsigned int id,const char *name);
+void MYAPI ConsoleProcessPath(unsigned int id,const char *name,const char *path);
+void MYAPI ConsoleTitle(const char *format, std::string color = CYAN_UNDERLINED_B);
+void MYAPI ConsoleInfo(const char *format, std::string color = WHITE_UNDERLINED_B);
+void MYAPI ConsoleTrace( std::string color, const char *format, ...);
 # define COUTCMD( ... ) { ConsoleLog(  __VA_ARGS__ );  }	
 
 #define GFILE_TRACE_INIT GlobalFileTraceInit
 #define GFILE_TRACE_DESTROY GlobalFileTraceDestroy
-#define GFILE_TRACE(channel, ...) GlobalFileTrace(channel, ...)
+#define GFILE_TRACE GlobalFileTrace
 #define FILE_TRACE FileTraceHelper
 
 # define COUTYRL( ... ) { ConsoleOutNoRl(YELLOW_UNDERLINED,  __VA_ARGS__ );  } 

@@ -8,8 +8,8 @@
 //==============================================================================
 
 
-#include "stdafx.h"
-#include "log.h"
+
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <ctype.h>
@@ -20,7 +20,7 @@
 #include <cstring>
 #include <ctime>
 #include <mutex>
-
+#include "tracelogger.h"
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -31,7 +31,7 @@
 bool IsGlobalFileTraceInitialized = false;
 FILE *GlobalLogFilePtr = nullptr;
 
-void __cdecl GlobalFileTrace(const char* pNChannel, const char* pNFormat, ...){
+void MYAPI GlobalFileTrace(const char* pNChannel, const char* pNFormat, ...){
     static std::mutex logMutex;
     std::lock_guard<std::mutex> lock(logMutex);
 
@@ -54,7 +54,7 @@ void __cdecl GlobalFileTrace(const char* pNChannel, const char* pNFormat, ...){
     std::fprintf(GlobalLogFilePtr, "[%s] %s: %s\n", timeStr, pNChannel, message);
 }
 
-void __cdecl GlobalFileTraceDestroy(){
+void MYAPI GlobalFileTraceDestroy(){
     static std::mutex logMutex;
     std::lock_guard<std::mutex> lock(logMutex);
 
@@ -63,7 +63,7 @@ void __cdecl GlobalFileTraceDestroy(){
 	IsGlobalFileTraceInitialized = false;
 }
 
-void __cdecl GlobalFileTraceInit(const char* pFileName){
+void MYAPI GlobalFileTraceInit(const char* pFileName){
     static std::mutex logMutex;
     std::lock_guard<std::mutex> lock(logMutex);
 
@@ -73,7 +73,7 @@ void __cdecl GlobalFileTraceInit(const char* pFileName){
 	}
 }
 
-void __cdecl FileTraceHelper(const char* pFileName, const char* pNChannel, const char* pNFormat, ...) {
+void MYAPI FileTraceHelper(const char* pFileName, const char* pNChannel, const char* pNFormat, ...) {
     static std::mutex logMutex;
     std::lock_guard<std::mutex> lock(logMutex);
 
@@ -103,7 +103,7 @@ void __cdecl FileTraceHelper(const char* pFileName, const char* pNChannel, const
 // ConsoleOut
 // Used by the ServiceTerminal
 //==============================================================================
-void __cdecl ConsoleOut(std::string color, const char *format, ...)
+void MYAPI ConsoleOut(std::string color, const char *format, ...)
 {
 	char    buf[4096], *p = buf;
 	va_list args;
@@ -127,7 +127,7 @@ void __cdecl ConsoleOut(std::string color, const char *format, ...)
 	std::clog << Format << buf;
 }
 
-void __cdecl ConsoleOutNoRl(std::string color, const char *format, ...)
+void MYAPI ConsoleOutNoRl(std::string color, const char *format, ...)
 {
 	char    buf[4096], *p = buf;
 	va_list args;
@@ -152,7 +152,7 @@ void __cdecl ConsoleOutNoRl(std::string color, const char *format, ...)
 }
 
 
-void __cdecl ConsoleLog(const char *format, ...)
+void MYAPI ConsoleLog(const char *format, ...)
 {
 	char    buf[4096], *p = buf;
 	va_list args;
@@ -175,7 +175,7 @@ void __cdecl ConsoleLog(const char *format, ...)
 	std::clog << FormatText << buf;
 }
 
-void __cdecl ConsoleTrace(const char *format, ...)
+void MYAPI ConsoleTrace(const char *format, ...)
 {
 	char    buf[4096], *p = buf;
 	va_list args;
@@ -200,7 +200,7 @@ void __cdecl ConsoleTrace(const char *format, ...)
 	std::clog << FormatText << buf;
 	std::clog << FormatReset << "";
 }
-void __cdecl ConsoleProcess(unsigned int id,const char *name)
+void MYAPI ConsoleProcess(unsigned int id,const char *name)
 {
 	char    buf[32], *p = buf;
 	sprintf(buf, "[%5d]",id);	
@@ -210,7 +210,7 @@ void __cdecl ConsoleProcess(unsigned int id,const char *name)
 	std::clog << FormatId << p << "\t";
 	std::clog << FormatName << name << "\n";
 }
-void __cdecl ConsoleProcessDenied(unsigned int id,const char *name)
+void MYAPI ConsoleProcessDenied(unsigned int id,const char *name)
 {
 	char    buf[32], *p = buf;
 	sprintf(buf, "[%5d]",id);	
@@ -222,7 +222,7 @@ void __cdecl ConsoleProcessDenied(unsigned int id,const char *name)
 
 
 }
-void __cdecl ConsoleProcessPath(unsigned int id,const char *name,const char *path)
+void MYAPI ConsoleProcessPath(unsigned int id,const char *name,const char *path)
 {
 	char    buf[32], *p = buf;
 	sprintf(buf, "[%5d]",id);
@@ -242,14 +242,14 @@ void __cdecl ConsoleProcessPath(unsigned int id,const char *name,const char *pat
 	
 	std::clog << FormatPath << path << "\n";
 }
-void __cdecl ConsoleTitle( const char *title, std::string color )
+void MYAPI ConsoleTitle( const char *title, std::string color )
 {
 	EndOfLineEscapeTag FormatTitle{ color, ANSI_TEXT_COLOR_RESET };
 	EndOfLineEscapeTag FormatName{ BLACK_UNDERLINED, ANSI_TEXT_COLOR_RESET };
 	std::clog << FormatTitle << title;
 	std::clog << FormatName << " ";
 }
-void __cdecl ConsoleInfo(const char *title, std::string color)
+void MYAPI ConsoleInfo(const char *title, std::string color)
 {
 	EndOfLineEscapeTag FormatTitle{ color, ANSI_TEXT_COLOR_RESET };
 	EndOfLineEscapeTag FormatName{ BLACK_UNDERLINED, ANSI_TEXT_COLOR_RESET };
@@ -266,7 +266,7 @@ void __cdecl ConsoleInfo(const char *title, std::string color)
 // You can monitor this stream using Debugview from SysInternals
 // https://docs.microsoft.com/en-us/sysinternals/downloads/debugview
 //==============================================================================
-void __cdecl SystemDebugOutput(const wchar_t *channel, const char *format, ...)
+void MYAPI SystemDebugOutput(const wchar_t *channel, const char *format, ...)
 {
 #ifndef FINAL
 	char    buf[4096], *p = buf;

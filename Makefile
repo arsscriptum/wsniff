@@ -18,6 +18,8 @@ BUILD := $(BASE)/build
 PLUGINS := $(BASE)/plugins
 SHARED := $(BASE)/shared
 SRC := $(BASE)/source
+LOGGERSRC := $(SRC)/tracelogger
+LOGGEROUT := $(BUILD)/tracelogger
 
 BIN_ROOT := $(BASE)/bin 
 BIN_OUT_X86 := $(BASE)/bin/x86
@@ -82,7 +84,7 @@ endif
 # Flags
 STD := c++17
 
-COMPILATION_FLAGS := -std=$(STD) -I$(INCLUDE_DIR) -fdata-sections -ffunction-sections -flto  -Wall -shared \
+COMPILATION_FLAGS := -std=$(STD) -I$(LOGGERSRC) -I$(INCLUDE_DIR) -fdata-sections -ffunction-sections -flto  -Wall -shared \
         -fkeep-inline-functions -fkeep-static-functions -fkeep-static-consts
         
 COMPILATION_PREPROCESSOR_DEFS += -DTARGET_LINUX -DDEJA_TARGET_LINUX -D__linux -DCOMPILING_DLL
@@ -153,22 +155,26 @@ O_SOURCE := $(foreach FILE,$(SOURCES),$(SRC)/$(FILE))
 OBJ := $(foreach FILE,$(SOURCE),$(FILE).o)
 O_OBJS := $(foreach FILE,$(OBJ),$(BUILD)/$(FILE))
 
+LOGGER_CPP_FILES := $(wildcard $(LOGGERSRC)/*.cpp)
+LOGGER_OBJS := $(patsubst $(SRC)/%.cpp, $(BUILD)/%.o, $(LOGGER_CPP_FILES))
+
+
 #Confusing, I know, this is to build every plugin subdirectory
 PLUGINSRC := $(wildcard $(SRC)/$(PLUGINS)/*/.)
 
-.PHONY: $(PLUGINSRC) #Gotta run this regardless of timestamp on the folder, let the plugin Makefile handle things 
+.PHONY: all printerror $(PLUGINSRC) #Gotta run this regardless of timestamp on the folder, let the plugin Makefile handle things 
 
 debug:
-	$(MAKE) all
+	@$(MAKE) all || { $(MAKE) printerror; exit 1; }
 
 release:
-	$(MAKE) BUILD_CONFIGURATION=release all
+	$(MAKE) BUILD_CONFIGURATION=release all || { $(MAKE) printerror; exit 1; }
 
 x64:
 	$(MAKE) clean all
 
 x86:
-	$(MAKE) BUILD_PLATFORM=x86 all
+	$(MAKE) BUILD_PLATFORM=x86 all || { $(MAKE) printerror; exit 1; }
 
 all: $(BIN_OUT) $(BUILD) $(SHARED) $(PLUGINS) printbeginbuild $(TARGET_OUT) $(PLUGINSRC)
 
@@ -205,7 +211,7 @@ clean:
 	rm -rf $(BIN_ROOT) $(BUILD) $(PLUGINS) $(SHARED) $(TARGET_OUT) *.dll
 
 
-$(TARGET_OUT): $(O_OBJS)
+$(TARGET_OUT): $(O_OBJS) $(LOGGER_OBJS)
 	$(COMPILR_BIN) -o $@ $(O_OBJS) $(LDFLAGS)
 
 $(BUILD)/%.o: $(SRC)/%.cpp
@@ -220,7 +226,8 @@ $(PLUGINSRC):
 
 #Make directories if necessary
 $(BUILD):
-	mkdir $(BUILD)
+	mkdir -p $(BUILD)
+	mkdir -p $(LOGGEROUT)
 
 $(PLUGINS):
 	mkdir -p $(PLUGINS)
