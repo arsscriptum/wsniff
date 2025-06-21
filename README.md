@@ -155,8 +155,8 @@ To use **multiple DLLs** with `AppInit_DLLs`, you simply list them **separated b
 ```reg
 [HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows]
 "AppInit_DLLs"="C:\\Path\\To\\first.dll C:\\Path\\To\\second.dll"
-"LoadAppInit_DLLs"=dword:00000001
-"RequireSignedAppInit_DLLs"=dword:00000000
+"LoadAppInit_DLLs"=__my_ptr:00000001
+"RequireSignedAppInit_DLLs"=__my_ptr:00000000
 ```
 
 > 📌 Paths must be **fully qualified**, **escaped with double backslashes**, and **space-separated**.
@@ -226,7 +226,7 @@ Here's the fun part! Go ahead and look in source/plugins/log/ for an example imp
 You'll need to link against ws.a and include ws.h (probably also include winsock2.h and windows.h) in your project (C or C++ should work fine). Here are the relevant functions you'll need to use:
 
 ```
-LIBAPI DWORD register_handler(tWS_plugin func, WS_HANDLER_TYPE type, char \*comment)
+LIBRARY_API uintptr_t register_handler(tWS_plugin func, WS_HANDLER_TYPE type, char \*comment)
 ```
 
 A function that'll register your function to be called when a packet is sent or received (based on WS_HANDLER_TYPE).
@@ -239,15 +239,15 @@ char* comment - Currently unnecessary, you could just pass a "", but this at lea
 
 RETURNS: A plugin identifier, save this somewhere because you'll need it to unload your handler.
 ```
-LIBAPI void unregister_handler(DWORD plugin_id, WS_HANDLER_TYPE type);
+LIBRARY_API void unregister_handler(__my_ptr plugin_id, WS_HANDLER_TYPE type);
 ```
 If for whatever reason your DLL is being unloaded, this'll remove your function handler. Just pass the plugin_id from register_handler and the handler type (send or receive)
 
 Also available to you are:
 
 ```
-LIBVAR struct WS_plugins ws_plugins
+LIBRARY_VAR struct WS_plugins ws_plugins
 
-LIBVAR struct WS_handler ws_handlers
+LIBRARY_VAR struct WS_handler ws_handlers
 ```
 Which are lists of the plugins and handlers loaded. Check out ws.h and list.h for how to use these. 

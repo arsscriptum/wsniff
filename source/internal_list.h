@@ -1,5 +1,5 @@
-#ifndef __LIST_H
-#define __LIST_H
+#ifndef __INTERNAL_LIST_H__
+#define __INTERNAL_LIST_H__
 
 /* This file is from Linux Kernel (include/linux/list.h) 
  * and modified by simply removing hardware prefetching of list items. 
@@ -16,6 +16,7 @@
  * generate better code by using them directly rather than
  * using the generic single-entry routines.
  */
+#include <cstddef>
 
 struct list_head {
     struct list_head *next, *prev;
@@ -91,9 +92,19 @@ static inline void __list_del(struct list_head *prev, struct list_head *next)
 static inline void list_del(struct list_head *entry)
 {
     __list_del(entry->prev, entry->next);
-    entry->next = (void *) 0;
-    entry->prev = (void *) 0;
+    entry->next = nullptr;  // Preferred in C++11 and above
+    entry->prev = nullptr;  // Preferred in C++11 and above
 }
+
+static inline void list_del_ptr(UINT_PTR p)
+{
+    struct list_head *entry = (struct list_head *)p;
+    __list_del(entry->prev, entry->next);
+    entry->next = nullptr;  // Preferred in C++11 and above
+    entry->prev = nullptr;  // Preferred in C++11 and above
+}
+
+
 
 /**
  * list_del_init - deletes entry from list and reinitialize it.
@@ -185,7 +196,8 @@ static inline void list_splice_init(struct list_head *list,
  * @member: the name of the list_struct within the struct.
  */
 #define list_entry(ptr, type, member) \
-    ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+    ((type *)((char *)(ptr)-(uintptr_t)(&((type *)0)->member)))
+
 
 /**
  * list_for_each    -   iterate over a list
@@ -239,4 +251,4 @@ static inline void list_splice_init(struct list_head *list,
          pos = n, n = list_entry(n->member.next, typeof(*n), member))
 
 
-#endif
+#endif // __INTERNAL_LIST_H__

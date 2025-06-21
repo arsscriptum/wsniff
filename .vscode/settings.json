@@ -3,6 +3,19 @@
         "log.h": "c",
         "ws.h": "c",
         "stdio.h": "c",
-        "windows.h": "c"
+        "windows.h": "c",
+        "tchar.h": "c",
+        "stdbool.h": "c",
+        "stddef.h": "c",
+        "array": "c",
+        "compare": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "cstdint": "c",
+        "plugins.h": "c",
+        "list.h": "c",
+        "stdint.h": "c"
     }
 }

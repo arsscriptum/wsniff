@@ -2,24 +2,12 @@
 #define __WS_SEND_H__
 
 #include <windows.h>
-#include "list.h"
-
-#ifdef EXPORT
-#define LIBVAR __declspec(dllexport)
-#else
-#define LIBVAR __declspec(dllimport)
-#endif
-
-#ifdef __cplusplus
-#define EXT extern "C"
-#define LIBAPI EXT LIBVAR
-#else
-#define EXT extern
-#define LIBAPI LIBVAR
-#endif
+#include "targetver.h"
+#include "tracelogger.h"
+#include "internal_list.h"
 
 
-typedef void (WINAPI *tWS_plugin)(SOCKET*, const char*, int*, int*); //For plugin hooks, passes a pointer to all the relevant data EXCEPT buf because that's already a pointer; Pointers can be rather scary.
+typedef void (MYAPI *tWS_plugin)(SOCKET*, const char*, int*, int*); //For plugin hooks, passes a pointer to all the relevant data EXCEPT buf because that's already a pointer; Pointers can be rather scary.
 
 typedef enum
 {
@@ -43,10 +31,11 @@ struct WS_plugins
     struct list_head plugins;
 };
 
-LIBAPI DWORD register_handler(tWS_plugin func, WS_HANDLER_TYPE type, char *comment);
-LIBAPI void unregister_handler(DWORD plugin_id, WS_HANDLER_TYPE type);
+LIBRARY_API DWORD register_handler(tWS_plugin func, WS_HANDLER_TYPE type, char *comment);
+LIBRARY_API void unregister_handler(DWORD plugin_id, WS_HANDLER_TYPE type);
 
-LIBVAR EXT struct WS_plugins ws_plugins;
-LIBVAR EXT struct WS_handler ws_handlers;
+EXT LIBRARY_VAR struct WS_plugins ws_plugins;
+EXT LIBRARY_VAR struct WS_handler ws_handlers;
+
 
 #endif //__WS_SEND_H__
