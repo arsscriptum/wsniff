@@ -18,6 +18,10 @@
 #include <iostream>
 #include <ctime>
 
+#ifndef DEJA_DISABLED
+	#include "DejaLib.h"
+#endif
+
 typedef std::pair<std::string, std::string> EndOfLineEscapeTag;
 
 
@@ -59,10 +63,6 @@ inline EndOfLineEscapeStreamScope operator<<(std::ostream& os, const EndOfLineEs
 {
     return EndOfLineEscapeStreamScope(tg, os);
 }
-
-#ifndef DEJA_DISABLED
-	#include "DejaLib.h"
-#endif
 
 const std::string ANSI_TEXT_COLOR_RESET = "\u001b[0m";
 const std::string ANSI_TEXT_COLOR_BLACK = "\u001b[30m";
