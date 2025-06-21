@@ -1,3 +1,11 @@
+*.nfo
+plugins/*.nfo
+plugins
+plugins/**
+bin
+bin/**
+shared
+shared/**
 *.dll
 *.a
 *.o

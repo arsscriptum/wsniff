@@ -1,3 +1,4 @@
+# gplante: multi platform makefile
 TARGET := ws
 TARGET_TYPE := dll
 PLUGIN_TYPE := dll
@@ -10,14 +11,19 @@ PLUGINS := $(BASE)/plugins
 SHARED := $(BASE)/shared
 SRC := $(BASE)/source
 
+BIN_ROOT := $(BASE)/bin 
+BIN_OUT_X86 := $(BASE)/bin/x86
+BIN_OUT_X64 := $(BASE)/bin/x64
+
 SHARED_X86 := $(SHARED)
 SHARED_X64 := $(SHARED)
 PLUGINS_X86 := $(PLUGINS)
 PLUGINS_X64 := $(PLUGINS)
-TARGET_OUT_X86 := $(TARGET)x86.$(TARGET_TYPE)
-TARGET_OUT_X64 := $(TARGET)x64.$(TARGET_TYPE)
 
+TARGET_OUT_X86 := $(BIN_OUT_X86)/$(TARGET).dll
+TARGET_OUT_X64 := $(BIN_OUT_X64)/$(TARGET).dll
 
+PLUGINS_BUILD_INFO := $(BASE)/plugins/$(BUILD_CONFIGURATION).nfo
 
 CC64 = x86_64-w64-mingw32-gcc
 CC32 = i686-w64-mingw32-gcc
@@ -36,6 +42,7 @@ ifeq ($(BUILD_CONFIGURATION),x86)
 	SHARED := $(SHARED_X86)
 	PLUGINS := $(PLUGINS_X86)
 	TARGET_OUT := $(TARGET_OUT_X86)
+	BIN_OUT := $(BIN_OUT_X86)
 else ifeq ($(BUILD_CONFIGURATION),x64)
     CC := $(CC64)
     INCLUDE_DIR := $(INCLUDE_X64)
@@ -43,13 +50,17 @@ else ifeq ($(BUILD_CONFIGURATION),x64)
 	SHARED := $(SHARED_X64)
 	PLUGINS := $(PLUGINS_X64)
 	TARGET_OUT := $(TARGET_OUT_X64)
+	BIN_OUT := $(BIN_OUT_X64)
 else
     $(error Unknown BUILD_CONFIGURATION "$(BUILD_CONFIGURATION)", must be x86 or x64)
 endif
 
 # Flags
 STD := c99
-CFLAGS := -std=$(STD) -O3 -fdata-sections -ffunction-sections -flto -DEXPORT -Wall -shared -I$(INCLUDE_DIR) -L$(LIB_DIR)
+CFLAGS := -std=$(STD) -O3 -fdata-sections -ffunction-sections -flto -DEXPORT -Wall -shared \
+          -I$(INCLUDE_DIR) -L$(LIB_DIR) \
+          -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
+
 LDFLAGS := -L$(LIB_DIR) -lwsock32 -liphlpapi -lpsapi -static -shared -Wl,--gc-sections -Wl,--out-implib,shared/lib$(TARGET).a -s
 
 
@@ -64,20 +75,26 @@ PLUGINSRC := $(wildcard $(SRC)/$(PLUGINS)/*/.)
 
 .PHONY: $(PLUGINSRC) #Gotta run this regardless of timestamp on the folder, let the plugin Makefile handle things 
 
-x86:
-	$(MAKE) CC=$(CC32) BUILD_CONFIGURATION=x86 all
-
 x64:
-	$(MAKE) CC=$(CC64) BUILD_CONFIGURATION=x64 all
+	$(MAKE) all
 
-all: clean $(BUILD) $(SHARED) $(TARGET_OUT) $(PLUGINS) $(PLUGINSRC)
+x86:
+	$(MAKE) BUILD_CONFIGURATION=x86 all
+
+all: $(BIN_OUT) $(BUILD) $(SHARED) $(PLUGINS) print-config $(TARGET_OUT) $(PLUGINSRC)
+
+print-config:
+	@echo  "\n"
+	@echo "\033[3;33m==== Building for $(BUILD_CONFIGURATION) using $(CC) ====\033[0m"
+	@echo  "\n"
 
 plugin: $(PLUGINS) $(PLUGINSRC)
 
 ws: $(BUILD) $(SHARED) $(TARGET_OUT)
 
 clean:
-	rm -rf $(BUILD) $(PLUGINS) $(SHARED) $(TARGET_OUT) *.dll
+	rm -rf $(BIN_ROOT) $(BUILD) $(PLUGINS) $(SHARED) $(TARGET_OUT) *.dll
+
 
 $(TARGET_OUT): $(O_OBJS)
 	$(CC) -o $@ $(O_OBJS) $(LDFLAGS)
@@ -89,14 +106,20 @@ $(SRC)/%.c: $(SRC)/%.h
 
 #Plugins
 $(PLUGINSRC):
-	$(MAKE) -C $@ CC="$(CC)"
+	$(MAKE) -C $@ CC="$(CC)" CFLAGS="$(CFLAGS)"
+
 
 #Make directories if necessary
 $(BUILD):
 	mkdir $(BUILD)
 
 $(PLUGINS):
-	mkdir -p $(PLUGINS)/$(BUILD_CONFIGURATION)
+	mkdir -p $(PLUGINS)
+	echo "# These libraries are build for the $(BUILD_CONFIGURATION) platform" > $(PLUGINS_BUILD_INFO)
 
 $(SHARED):
 	mkdir -p $(SHARED)
+
+$(BIN_OUT):
+	mkdir -p $(BIN_OUT)
+	
