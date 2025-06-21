@@ -12,17 +12,17 @@
 struct WS_plugins ws_plugins;
 struct WS_handler ws_handlers;
 
-typedef int (MYAPI *tWS)(SOCKET, const char*, int, int); //For base functions
+typedef int (MYAPI *tWS)(SOCKET, const char*, unsigned int, int); //For base functions
 
 static DWORD MYAPI initialize(LPVOID param);
 static void revert();
 
-static int MYAPI repl_recv(SOCKET s, const char *buf, int len, int flags);
-static int MYAPI repl_send(SOCKET s, const char *buf, int len, int flags);
+static int MYAPI repl_recv(SOCKET s, const char *buf, unsigned int len, int flags);
+static int MYAPI repl_send(SOCKET s, const char *buf, unsigned int len, int flags);
 
 //Trampolenes
-static int (MYAPI *pRecv)(SOCKET s, const char* buf, int len, int flags) = NULL; 
-static int (MYAPI *pSend)(SOCKET s, const char* buf, int len, int flags) = NULL;
+static int (MYAPI *pRecv)(SOCKET s, const char* buf, unsigned int len, int flags) = NULL; 
+static int (MYAPI *pSend)(SOCKET s, const char* buf, unsigned int len, int flags) = NULL;
 
 //Keep track to undo change before closing
 static BYTE replaced_send[10];
@@ -32,7 +32,7 @@ static DWORD orig_size_recv = 0;
 static UINT_PTR  addr_send = 0; 
 static UINT_PTR  addr_recv = 0;
 
-LIBRARY_API DWORD register_handler(tWS_plugin func, WS_HANDLER_TYPE type, char *comment)
+LIBRARY_API DWORD register_handler(tWS_plugin func, WS_HANDLER_TYPE type, const char *comment)
 {
 	if(comment == NULL)
 		comment = (char*)"";
@@ -135,14 +135,14 @@ static void revert()
 	return;
 }
 
-static int MYAPI repl_send(SOCKET s, const char *buf, int len, int flags)
+static int MYAPI repl_send(SOCKET s, const char *buf, unsigned int len, int flags)
 {
 	list_for_each(t, &ws_handlers.ws_handlers_send)
 		list_entry(t, struct WS_handler, ws_handlers_send)->func(&s,buf,&len,&flags);
 	return pSend(s,buf,len,flags);
 }
 
-static int MYAPI repl_recv(SOCKET s, const char *buf, int len, int flags)
+static int MYAPI repl_recv(SOCKET s, const char *buf, unsigned int len, int flags)
 {
 	list_for_each(t, &ws_handlers.ws_handlers_recv)
 		list_entry(t, struct WS_handler, ws_handlers_recv)->func(&s,buf,&len,&flags);

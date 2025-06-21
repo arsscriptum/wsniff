@@ -4,12 +4,12 @@
 #include <stdint.h>
 #include <zlib.h>
 #include <string.h>
-#include "log.h"
+#include "tracelogger.h"
 
-static DWORD WINAPI setup(LPVOID param);
-static DWORD WINAPI handle_buf(LPVOID param);
+static DWORD MYAPI setup(LPVOID param);
+static DWORD MYAPI handle_buf(LPVOID param);
 
-void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags);
+void MYAPI log_ws(SOCKET *s, const char *buf, unsigned int *len, int *flags);
 int UncompressData( const unsigned char* abSrc, int nLenSrc, unsigned char* abDst, int nLenDst );
 
 static DWORD threadIDConsole = 0;
@@ -64,7 +64,7 @@ inline void handle_chat_2(uint8_t *buf, size_t size)
         free(chat);
 }
 
-static DWORD WINAPI handle_buf(LPVOID PARAM) //Serialize packet parsing, TODO: safety for adding a new entry while working through
+static DWORD MYAPI handle_buf(LPVOID PARAM) //Serialize packet parsing, TODO: safety for adding a new entry while working through
 {
 	while(!setup_flag);
 	LOG("Log start!");
@@ -106,7 +106,7 @@ static DWORD WINAPI handle_buf(LPVOID PARAM) //Serialize packet parsing, TODO: s
 	return 0;
 }
 
-void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags)
+void MYAPI log_ws(SOCKET *s, const char *buf, unsigned int *len, int *flags)
 {
 	if(*len < sizeof(struct Pkt_FFXIV))
 		return;
@@ -131,7 +131,7 @@ void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags)
 	return;
 }
 
-static DWORD WINAPI setup(LPVOID param)
+static DWORD MYAPI setup(LPVOID param)
 {
 	AllocConsole();
 	freopen("CONOUT$","w",stdout);

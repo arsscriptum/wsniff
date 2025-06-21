@@ -8,22 +8,60 @@
 #pragma message("LOGGING TO FILE DISABLED!")
 #endif
 
-static DWORD WINAPI setup_console(LPVOID param);
-static DWORD WINAPI console_handler(LPVOID param);
+static DWORD MYAPI setup_console(LPVOID param);
+static DWORD MYAPI console_handler(LPVOID param);
 
-void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags);
+void MYAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags);
 
 static DWORD threadIDConsole = 0;
 
 static DWORD plugin_id_send = 0;
 static DWORD plugin_id_recv = 0;
 
+static DWORD MYAPI setup_config()
+{
+    FILE *file = fopen("wsniff.cfg", "r");
+    int send = 0, recv = 0, open_console = 0;
+
+    if (!file) {
+        // Create default config
+        file = fopen("wsniff.cfg", "w");
+        if (file) {
+            fprintf(file, "log_send=1\nlog_recv=0\nuse_console=0\n");
+            fclose(file);
+            send = 1;
+        }
+    } else {
+        char line[64];
+        while (fgets(line, sizeof(line), file)) {
+            if (strncmp(line, "log_send=", 9) == 0)
+                send = atoi(line + 9);
+            else if (strncmp(line, "log_recv=", 9) == 0)
+                recv = atoi(line + 9);
+			else if (strncmp(line, "use_console=", 12) == 0)
+                open_console = atoi(line + 12);
+        }
+        fclose(file);
+    }
+
+    if (send)
+        toggle_send();
+    if (recv)
+        toggle_recv();
+
+    if (open_console)
+        CreateThread(NULL, 0, setup_console, NULL, 0, &threadIDConsole);
+
+    return 0;
+}
+
+
 BOOL APIENTRY DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
 {
 	switch(reason)
 	{
 		case DLL_PROCESS_ATTACH:
-			CreateThread(NULL,0,setup_console,NULL,0,&threadIDConsole);
+			setup_config();
 			break;
 		case DLL_PROCESS_DETACH:
 			unregister_handler(plugin_id_send, WS_HANDLER_SEND);
@@ -40,7 +78,7 @@ BOOL APIENTRY DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
 }
 
 
-void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags) //Note that you're given pointers to everything! (buf was already a pointer though)
+void MYAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags) //Note that you're given pointers to everything! (buf was already a pointer though)
 {
 	struct sockaddr_in info;
 	int infolen;
@@ -55,7 +93,7 @@ void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags) //Note that
 	LOG(flags,sizeof(int),1);
 	LOG(buf,sizeof(char),*len); //If for whatever reason len != buffer size, then there's some bigger underlying problem... or another plugin is messing with something
 #else	
-	LOG("%s:%u, Len %d, Flags %d, socket %u",inet_ntoa(info.sin_addr), port, *len, *flags, *s);
+	LOG("%s:%u, Len %d, Flags %d, socket %u",inet_ntoa(info.sin_addr), port, *len, *flags, (UINT_PTR)*s);
 	LOGn("Data: ");  
 	for(int i = 0; i < *len; i++) 
 		LOGn("%02X ",(unsigned char)buf[i]);
@@ -95,7 +133,7 @@ static inline void toggle_recv()
 	}
 }
 
-static DWORD WINAPI console_handler(LPVOID param)
+static DWORD MYAPI console_handler(LPVOID param)
 {
 	int choice;
 	while(1)
@@ -119,7 +157,7 @@ static DWORD WINAPI console_handler(LPVOID param)
 	return 0;
 }
 
-static DWORD WINAPI setup_console(LPVOID param)
+static DWORD MYAPI setup_console(LPVOID param)
 {
 #ifdef LOGGING_ENABLED
 	char *name = malloc(sizeof(char)*30);

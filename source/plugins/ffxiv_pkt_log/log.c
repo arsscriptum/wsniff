@@ -5,9 +5,9 @@
 #include <zlib.h>
 #include "log.h"
 
-static DWORD WINAPI setup_console(LPVOID param);
+static DWORD MYAPI setup_console(LPVOID param);
 
-void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags);
+void MYAPI log_ws(SOCKET *s, const char *buf, unsigned int *len, int *flags);
 int UncompressData( const unsigned char* abSrc, int nLenSrc, unsigned char* abDst, int nLenDst );
 
 static DWORD threadIDConsole = 0;
@@ -56,6 +56,63 @@ struct Pkt_FFXIV
 };
 #pragma pack()
 
+
+void MYAPI log_ws(SOCKET *s, const char *buf, unsigned int *len, int *flags)
+{
+	if(!*len || *len < (sizeof(struct Pkt_FFXIV)-sizeof(unsigned char*)) )
+		return;
+
+	struct Pkt_FFXIV packet;
+
+
+	uint32_t pos = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(buf));
+
+	
+	memcpy(&packet,(void*)pos,sizeof(struct Pkt_FFXIV)-sizeof(unsigned char*)); //Packet header info
+	pos += sizeof(struct Pkt_FFXIV)-sizeof(unsigned char*);	
+
+	if(packet.size < 19)
+		return;
+	//At this point, we know exactly how many messages there are
+	size_t to_read = *len - (sizeof(struct Pkt_FFXIV) - sizeof(unsigned char*));
+	packet.data = (unsigned char*)malloc(to_read);
+	
+	memcpy(packet.data, (void*)pos, to_read);
+	pos += to_read;
+	
+	//Decompress stream	
+	if(packet.flag2)
+	{
+		unsigned char *t_data = (unsigned char*)malloc(CHUNK);
+		UncompressData(packet.data,to_read,t_data,CHUNK);
+		free(packet.data);
+		packet.data = t_data;
+	}
+    pos = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(packet.data));
+	
+	while(packet.message_count--)
+	{
+		struct Pkt_FFXIV_msg *msg = (struct Pkt_FFXIV_msg *)malloc(sizeof(struct Pkt_FFXIV_msg));
+
+		memcpy(msg, packet.data, sizeof(struct Pkt_FFXIV_msg));
+		pos += sizeof(struct Pkt_FFXIV_msg); //Data for the packet would start here
+
+		switch(msg->msg_type)
+		{
+			case 0x00650014: handle_chat((unsigned char*)pos, msg->msg_size); break;
+			case 0x00670014: handle_chat_2((unsigned char*)pos, msg->msg_size); break;
+			default: break;
+		}
+
+		pos += msg->msg_size;
+		free(msg);
+	}
+	
+	free(packet.data);
+	return;
+}
+
+
 BOOL APIENTRY DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
 {
 	switch(reason)
@@ -80,7 +137,7 @@ BOOL APIENTRY DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
 inline void handle_chat(unsigned char *buf, size_t size)
 {
 
-	struct Pkt_FFXIV_chat *chat = malloc(sizeof(struct Pkt_FFXIV_chat));
+	struct Pkt_FFXIV_chat *chat = (struct Pkt_FFXIV_chat *)malloc(sizeof(struct Pkt_FFXIV_chat));
 	memcpy(chat, buf, size);
 	LOGn("Message Size: %d ", (int)size);
 	LOG("[%s][%d %d]: %s", chat->name, chat->id1, chat->id2, chat->message);
@@ -90,67 +147,14 @@ inline void handle_chat(unsigned char *buf, size_t size)
 inline void handle_chat_2(unsigned char *buf, size_t size)
 {
 
-	struct Pkt_FFXIV_chat_2 *chat = malloc(sizeof(struct Pkt_FFXIV_chat_2));
+	struct Pkt_FFXIV_chat_2 *chat = (struct Pkt_FFXIV_chat_2 *)malloc(sizeof(struct Pkt_FFXIV_chat_2));
 	memcpy(chat, buf, size);
 	LOGn("Message Size: %d ", (int)size);
 	LOG("[%s][%d %d]: %s", chat->name, chat->id1, chat->id2, chat->message);
 	free(chat);
 }
 
-void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags)
-{
-	if(!*len || *len < (sizeof(struct Pkt_FFXIV)-sizeof(unsigned char*)) )
-		return;
-
-	struct Pkt_FFXIV packet;
-
-	uint32_t pos = (uint32_t)buf;
-	
-	memcpy(&packet,(void*)pos,sizeof(struct Pkt_FFXIV)-sizeof(unsigned char*)); //Packet header info
-	pos += sizeof(struct Pkt_FFXIV)-sizeof(unsigned char*);	
-
-	if(packet.size < 19)
-		return;
-	//At this point, we know exactly how many messages there are
-	size_t to_read = *len - (sizeof(struct Pkt_FFXIV) - sizeof(unsigned char*));
-	packet.data = malloc(to_read);
-	
-	memcpy(packet.data, (void*)pos, to_read);
-	pos += to_read;
-	
-	//Decompress stream	
-	if(packet.flag2)
-	{
-		unsigned char *t_data = malloc(CHUNK);
-		UncompressData(packet.data,to_read,t_data,CHUNK);
-		free(packet.data);
-		packet.data = t_data;
-	}
-
-	pos = (uint32_t)(packet.data); //Start at the beginning of the messages
-	while(packet.message_count--)
-	{
-		struct Pkt_FFXIV_msg *msg = malloc(sizeof(struct Pkt_FFXIV_msg));
-
-		memcpy(msg, packet.data, sizeof(struct Pkt_FFXIV_msg));
-		pos += sizeof(struct Pkt_FFXIV_msg); //Data for the packet would start here
-
-		switch(msg->msg_type)
-		{
-			case 0x00650014: handle_chat((unsigned char*)pos, msg->msg_size); break;
-			case 0x00670014: handle_chat_2((unsigned char*)pos, msg->msg_size); break;
-			default: break;
-		}
-
-		pos += msg->msg_size;
-		free(msg);
-	}
-	
-	free(packet.data);
-	return;
-}
-
-static DWORD WINAPI setup_console(LPVOID param)
+static DWORD MYAPI setup_console(LPVOID param)
 {
 	AllocConsole();
 	freopen("CONOUT$","w",stdout);
