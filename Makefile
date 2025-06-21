@@ -8,7 +8,9 @@ BUILD_PLATFORM ?= x64
 BUILD_CONFIGURATION ?= debug
 DEJAINSIGHT_ENABLED ?= no
 COMPILER ?= cpp
+PARALLEL_BUILD := yes
 SOURCE := ws misc plugins
+NUM_PROCS := $(shell nproc)
 
 # Paths
 BASE := .
@@ -86,6 +88,16 @@ COMPILATION_FLAGS := -std=$(STD) -I$(INCLUDE_DIR) -fdata-sections -ffunction-sec
 COMPILATION_PREPROCESSOR_DEFS += -DTARGET_LINUX -DDEJA_TARGET_LINUX -D__linux -DCOMPILING_DLL
 LINKING_LIBRARIES := -lwsock32 -liphlpapi -lpsapi -loleaut32
 LDFLAGS := -L$(LIB_DIR) -shared -Wl,--gc-sections -Wl,--out-implib,shared/lib$(TARGET).a -s
+
+# parallel compilation explicitely
+
+ifeq ($(PARALLEL_BUILD),yes)
+	COMPILATION_FLAGS += -flto=$(NUM_PROCS)
+	LDFLAGS += -flto=$(NUM_PROCS)
+	COMPILATION_PREPROCESSOR_DEFS += -DENABLE_PARALLEL_BUILD=yes -DENABLE_PARALLEL_LINK=yes -DPARALLEL_BUILD_PROCS=$(NUM_PROCS)
+else 
+	COMPILATION_PREPROCESSOR_DEFS += -DENABLE_PARALLEL_BUILD=no -DENABLE_PARALLEL_LINK=no
+endif
 
 ifeq ($(COMPILER),c)
     COMPILR_BIN := $(CC)
@@ -168,6 +180,7 @@ printbeginbuild:
 	@echo "\033[2;94m deja_insight......: $(DEJAINSIGHT_ENABLED)\033[0m"
 	@echo "\033[2;93m compiled in ......: $(COMPILER) using $(COMPILR_BIN) \033[0m"
 	@echo "\033[2;96m link with.........: $(LINKING_LIBRARIES)\033[0m"
+	@echo "\033[2;96m parallel builds...: $(PARALLEL_BUILD), $(NUM_PROCS) processors\033[0m"
 	@echo "\033[2;96m defines...........: $(COMPILATION_PREPROCESSOR_DEFS)\033[0m"
 	@echo  "\n"
 
@@ -202,7 +215,7 @@ $(SRC)/%.c: $(SRC)/%.h
 
 #Plugins
 $(PLUGINSRC):
-	$(MAKE) -C $@ CC="$(COMPILR_BIN)" COMPILATION_FLAGS="$(COMPILATION_FLAGS)"
+	$(MAKE) -C $@ COMPILR_BIN="$(COMPILR_BIN)" COMPILATION_FLAGS="$(COMPILATION_FLAGS)" BUILD_PLATFORM="$(BUILD_PLATFORM)" BUILD_CONFIGURATION="$(BUILD_CONFIGURATION)" DEJAINSIGHT_ENABLED="$(DEJAINSIGHT_ENABLED)"
 
 
 #Make directories if necessary
