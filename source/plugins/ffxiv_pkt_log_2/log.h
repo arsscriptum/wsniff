@@ -1,5 +1,5 @@
-#ifndef LOG_H
-#define LOG_H
+#ifndef __LOG_H__
+#define __LOG_H__
 
 #include <stdio.h>
 #include "../../ws.h"
@@ -62,4 +62,4 @@ struct Pkt_FFXIV
 #pragma pack()
 
 
-#endif //LOG_H
+#endif //__LOG_H__

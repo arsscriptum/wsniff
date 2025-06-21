@@ -3,11 +3,9 @@ SOURCE := log
 LWS := -lws
 BASE := ../../..
 
-CC  := i686-w64-mingw32-gcc
-
-STD := c99
-CFLAGS := -std=$(STD) -O3 -fdata-sections -ffunction-sections -flto -Wall
-LDFLAGS := -lws2_32 -static -shared -Wl,--gc-sections -s -L$(BASE)/shared/ $(LWS) -lz
+STD ?= c99
+CFLAGS ?= -std=$(STD) -O3 -fdata-sections -ffunction-sections -flto -Wall
+LDFLAGS ?= -lws2_32 -static -shared -Wl,--gc-sections -s -L$(BASE)/shared/ $(LWS) -lz
 
 SOURCES := $(foreach FILE,$(SOURCE),$(FILE).c)
 

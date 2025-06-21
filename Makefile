@@ -43,6 +43,7 @@ ifeq ($(BUILD_CONFIGURATION),x86)
 	PLUGINS := $(PLUGINS_X86)
 	TARGET_OUT := $(TARGET_OUT_X86)
 	BIN_OUT := $(BIN_OUT_X86)
+	PLATFORM_DEFINE := __PLATFORM_X86__
 else ifeq ($(BUILD_CONFIGURATION),x64)
     CC := $(CC64)
     INCLUDE_DIR := $(INCLUDE_X64)
@@ -51,13 +52,14 @@ else ifeq ($(BUILD_CONFIGURATION),x64)
 	PLUGINS := $(PLUGINS_X64)
 	TARGET_OUT := $(TARGET_OUT_X64)
 	BIN_OUT := $(BIN_OUT_X64)
+	PLATFORM_DEFINE := __PLATFORM_X64__
 else
     $(error Unknown BUILD_CONFIGURATION "$(BUILD_CONFIGURATION)", must be x86 or x64)
 endif
 
 # Flags
 STD := c99
-CFLAGS := -std=$(STD) -O3 -fdata-sections -ffunction-sections -flto -DEXPORT -Wall -shared \
+CFLAGS := -std=$(STD) -O3 -fdata-sections -ffunction-sections -flto -DLOGGING_ENABLED -D$(PLATFORM_DEFINE) -DEXPORT -Wall -shared \
           -I$(INCLUDE_DIR) -L$(LIB_DIR) \
           -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
 

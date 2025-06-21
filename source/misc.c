@@ -20,7 +20,13 @@ BOOL apply_patch(BYTE eType, DWORD dwAddress, const void *pTarget, DWORD *orig_s
 		(DWORD)pTarget - (dwAddress + sizeof(DWORD) + sizeof(BYTE))
 	};
 	VirtualProtect((LPVOID)dwAddress,sizeof(DWORD),PAGE_EXECUTE_READWRITE,&dwOldValue);
-	ReadProcessMemory(GetCurrentProcess(),(LPVOID)dwAddress,(LPVOID)replaced,sizeof(pWrite),(PDWORD)orig_size); //Keep track of the bytes we replaced
+#ifdef __PLATFORM_X64__ 
+ReadProcessMemory(GetCurrentProcess(),(LPVOID)dwAddress,(LPVOID)replaced,sizeof(pWrite),(SIZE_T*)orig_size);
+#else 
+ReadProcessMemory(GetCurrentProcess(),(LPVOID)dwAddress,(LPVOID)replaced,sizeof(pWrite),(PDWORD)orig_size);
+#endif
+
+	 //Keep track of the bytes we replaced
 	BOOL bSuccess = WriteProcessMemory(GetCurrentProcess(),(LPVOID)dwAddress,&pWrite,sizeof(pWrite),NULL);
 	VirtualProtect((LPVOID)dwAddress,sizeof(DWORD),dwOldValue,&dwTemp);
 	

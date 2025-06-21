@@ -82,7 +82,7 @@ inline void handle_chat(unsigned char *buf, size_t size)
 
 	struct Pkt_FFXIV_chat *chat = malloc(sizeof(struct Pkt_FFXIV_chat));
 	memcpy(chat, buf, size);
-	LOGn("Message Size: %d ", size);
+	LOGn("Message Size: %d ", (int)size);
 	LOG("[%s][%d %d]: %s", chat->name, chat->id1, chat->id2, chat->message);
 	free(chat);
 }
@@ -92,7 +92,7 @@ inline void handle_chat_2(unsigned char *buf, size_t size)
 
 	struct Pkt_FFXIV_chat_2 *chat = malloc(sizeof(struct Pkt_FFXIV_chat_2));
 	memcpy(chat, buf, size);
-	LOGn("Message Size: %d ", size);
+	LOGn("Message Size: %d ", (int)size);
 	LOG("[%s][%d %d]: %s", chat->name, chat->id1, chat->id2, chat->message);
 	free(chat);
 }

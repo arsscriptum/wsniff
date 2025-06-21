@@ -2,6 +2,12 @@
 #include <windows.h>
 #include "log.h"
 
+#ifdef LOGGING_ENABLED
+#pragma message("LOGGING TO FILE ENABLED!")
+#else	
+#pragma message("LOGGING TO FILE DISABLED!")
+#endif
+
 static DWORD WINAPI setup_console(LPVOID param);
 static DWORD WINAPI console_handler(LPVOID param);
 
@@ -40,7 +46,7 @@ void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags) //Note that
 	int infolen;
 	getpeername(*s,(struct sockaddr*)(&info),&infolen);
 	const short port = ntohs(info.sin_port);
-#if LOGGING == 1
+#ifdef LOGGING_ENABLED
 	//<SOCKET:4><ADDR:4><PORT:2><LEN:4><FLAGS:4><DATA:LEN>
 	LOG(s,sizeof(SOCKET),1);
 	LOG(&info.sin_addr,sizeof(struct in_addr),1);
@@ -58,7 +64,7 @@ void WINAPI log_ws(SOCKET *s, const char *buf, int *len, int *flags) //Note that
 	return;
 }
 
-inline void help_text()
+static inline void help_text()
 {
 	printf("What do you want to do?\n");
 	printf("0. Disable logging\n");
@@ -70,7 +76,7 @@ inline void help_text()
 static inline void toggle_send()
 {
 	if(!plugin_id_send)
-		plugin_id_send = register_handler(log_ws, WS_HANDLER_SEND, "A logging function for ws2_send");
+		plugin_id_send = register_handler(log_ws, (TMP_ARG_TYPE)WS_HANDLER_SEND, "A logging function for ws2_send");
 	else
 	{
 		unregister_handler(plugin_id_send, WS_HANDLER_SEND);
@@ -81,7 +87,7 @@ static inline void toggle_send()
 static inline void toggle_recv()
 {
 	if(!plugin_id_recv)
-		plugin_id_recv = register_handler(log_ws, WS_HANDLER_RECV, "A logging function for ws2_recv");			
+		plugin_id_recv = register_handler(log_ws, (TMP_ARG_TYPE)WS_HANDLER_RECV, "A logging function for ws2_recv");			
 	else
 	{
 		unregister_handler(plugin_id_recv, WS_HANDLER_RECV);
@@ -115,7 +121,7 @@ static DWORD WINAPI console_handler(LPVOID param)
 
 static DWORD WINAPI setup_console(LPVOID param)
 {
-#if LOGGING == 1
+#ifdef LOGGING_ENABLED
 	char *name = malloc(sizeof(char)*30);
 	sprintf(name,"log_%u.bin",(unsigned int)time(NULL));
 	logfile = fopen(name,"wb");
@@ -138,7 +144,7 @@ static DWORD WINAPI setup_console(LPVOID param)
 			}
 		}
 	}
-#if LOGGING == 1
+#ifdef LOGGING_ENABLED
 	fclose(logfile);
 #endif
 	return 0;

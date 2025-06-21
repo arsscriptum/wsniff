@@ -1,5 +1,5 @@
-#ifndef WS_SEND_H
-#define WS_SEND_H
+#ifndef __WS_SEND_H__
+#define __WS_SEND_H__
 
 #include <windows.h>
 #include "list.h"
@@ -49,4 +49,4 @@ LIBAPI void unregister_handler(DWORD plugin_id, WS_HANDLER_TYPE type);
 LIBVAR EXT struct WS_plugins ws_plugins;
 LIBVAR EXT struct WS_handler ws_handlers;
 
-#endif //WS_SEND_H
+#endif //__WS_SEND_H__
