@@ -7,7 +7,7 @@
 #include "internal_list.h"
 
 
-typedef void (MYAPI *tWS_plugin)(SOCKET*, const char*, int*, int*); //For plugin hooks, passes a pointer to all the relevant data EXCEPT buf because that's already a pointer; Pointers can be rather scary.
+typedef void (MYAPI *tWS_plugin)(SOCKET*, const char*, unsigned int*, int*); //For plugin hooks, passes a pointer to all the relevant data EXCEPT buf because that's already a pointer; Pointers can be rather scary.
 
 typedef enum
 {
@@ -31,7 +31,7 @@ struct WS_plugins
     struct list_head plugins;
 };
 
-LIBRARY_API DWORD register_handler(tWS_plugin func, WS_HANDLER_TYPE type, char *comment);
+LIBRARY_API DWORD register_handler(tWS_plugin func, WS_HANDLER_TYPE type, const char *comment);
 LIBRARY_API void unregister_handler(DWORD plugin_id, WS_HANDLER_TYPE type);
 
 EXT LIBRARY_VAR struct WS_plugins ws_plugins;
