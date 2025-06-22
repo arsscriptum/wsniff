@@ -4,10 +4,10 @@
 TARGET := ws
 TARGET_TYPE := dll
 PLUGIN_TYPE := dll
-BUILD_PLATFORM ?= x64
-BUILD_CONFIGURATION ?= debug
-DEJAINSIGHT_ENABLED ?= no
-COMPILER ?= cpp
+BUILD_PLATFORM := x64
+BUILD_CONFIGURATION := debug
+DEJAINSIGHT_ENABLED := no
+COMPILER := cpp
 PARALLEL_BUILD := yes
 SOURCE := ws misc plugins
 NUM_PROCS := $(shell nproc)
@@ -15,26 +15,26 @@ NUM_PROCS := $(shell nproc)
 # Paths
 PARENT := $(realpath ..)
 BASE := $(PARENT)/wsniff
-BUILD := $(BASE)/build
-PLUGINS := $(BASE)/plugins
-SHARED := $(BASE)/shared
-SRC := $(BASE)/source
-LOGGERSRC := $(SRC)/tracelogger
-LOGGEROUT := $(BUILD)/tracelogger
+BUILD_DIR := $(BASE)/build
+PLUGINS_DIR := $(BASE)/plugins
+SHARED_DIR := $(BASE)/shared
+SRC_DIR := $(BASE)/source
+TRACELOGGER_SRC_DIR := $(SRC_DIR)/tracelogger
+TRACELOGGER_BUILD_DIR := $(BUILD_DIR)/tracelogger
 
 BIN_ROOT := $(BASE)/bin 
-BIN_OUT_X86 := $(BASE)/bin/x86
-BIN_OUT_X64 := $(BASE)/bin/x64
+SRC_DIR_X86 := $(BASE)/bin/x86
+SRC_DIR_X64 := $(BASE)/bin/x64
 
 # Was initially used to add a path like x86/ before the lib, but not used anymore, 
 # I keep it in case I change my mind again
-SHARED_X86 := $(SHARED)
-SHARED_X64 := $(SHARED)
-PLUGINS_X86 := $(PLUGINS)
-PLUGINS_X64 := $(PLUGINS)
+SHARED_X86 := $(SHARED_DIR)
+SHARED_X64 := $(SHARED_DIR)
+PLUGINS_X86 := $(PLUGINS_DIR)
+PLUGINS_X64 := $(PLUGINS_DIR)
 
-TARGET_OUT_X86 := $(BIN_OUT_X86)/$(TARGET).dll
-TARGET_OUT_X64 := $(BIN_OUT_X64)/$(TARGET).dll
+WS_DLL_X86 := $(SRC_DIR_X86)/$(TARGET).dll
+WS_DLL_X64 := $(SRC_DIR_X64)/$(TARGET).dll
 
 PLUGINS_BUILD_INFO := $(BASE)/plugins/$(BUILD_PLATFORM).nfo
 
@@ -65,19 +65,19 @@ ifeq ($(BUILD_PLATFORM),x86)
     CCXX := $(CCXX32)
     INCLUDE_DIR := $(INCLUDE_X86)
     LIB_DIR := $(LIB_X86)
-	SHARED := $(SHARED_X86)
-	PLUGINS := $(PLUGINS_X86)
-	TARGET_OUT := $(TARGET_OUT_X86)
-	BIN_OUT := $(BIN_OUT_X86)
+	SHARED_DIR := $(SHARED_X86)
+	PLUGINS_DIR := $(PLUGINS_X86)
+	WS_DLL := $(WS_DLL_X86)
+	BIN_DIR := $(SRC_DIR_X86)
 else ifeq ($(BUILD_PLATFORM),x64)
     CC := $(CC64)
 	CCXX := $(CCXX64)
     INCLUDE_DIR := $(INCLUDE_X64)
     LIB_DIR := $(LIB_X64)
-	SHARED := $(SHARED_X64)
-	PLUGINS := $(PLUGINS_X64)
-	TARGET_OUT := $(TARGET_OUT_X64)
-	BIN_OUT := $(BIN_OUT_X64)
+	SHARED_DIR := $(SHARED_X64)
+	PLUGINS_DIR := $(PLUGINS_X64)
+	WS_DLL := $(WS_DLL_X64)
+	BIN_DIR := $(SRC_DIR_X64)
 else
     $(error Unknown BUILD_PLATFORM "$(BUILD_PLATFORM)", must be x86 or x64)
 endif
@@ -85,7 +85,7 @@ endif
 # Flags
 STD := c++17
 
-COMPILATION_FLAGS := -std=$(STD) -I$(LOGGERSRC) -I$(INCLUDE_DIR) -fdata-sections -ffunction-sections -flto  -Wall -shared \
+COMPILATION_FLAGS := -std=$(STD) -I$(TRACELOGGER_SRC_DIR) -I$(INCLUDE_DIR) -fdata-sections -ffunction-sections -Wall -shared \
         -fkeep-inline-functions -fkeep-static-functions -fkeep-static-consts
         
 COMPILATION_PREPROCESSOR_DEFS += -DTARGET_LINUX -DDEJA_TARGET_LINUX -D__linux -DCOMPILING_DLL
@@ -127,7 +127,7 @@ endif
 ifeq ($(BUILD_CONFIGURATION),debug)
 	COMPILATION_FLAGS += -g -Og -fvar-tracking -fno-eliminate-unused-debug-symbols -femit-class-debug-always
 else ifeq ($(BUILD_CONFIGURATION),release)
-	COMPILATION_FLAGS += -Os
+	COMPILATION_FLAGS += -Os -flto
 else ifeq ($(BUILD_CONFIGURATION),relfast1)
 	COMPILATION_FLAGS += -fprofile-arcs -ffast-math -fwhole-program -faggressive-loop-optimizations -finline-functions -foptimize-crc -foptimize-strlen
 else ifeq ($(BUILD_CONFIGURATION),relfast2)
@@ -151,19 +151,16 @@ COMPILATION_FLAGS += $(COMPILATION_PREPROCESSOR_DEFS)
 LDFLAGS += $(LINKING_LIBRARIES)
 
 SOURCES := $(foreach FILE,$(SOURCE),$(FILE).cpp)
-O_SOURCE := $(foreach FILE,$(SOURCES),$(SRC)/$(FILE))
+O_SOURCE := $(foreach FILE,$(SOURCES),$(SRC_DIR)/$(FILE))
 
 OBJ := $(foreach FILE,$(SOURCE),$(FILE).o)
-O_OBJS := $(foreach FILE,$(OBJ),$(BUILD)/$(FILE))
+O_OBJS := $(foreach FILE,$(OBJ),$(BUILD_DIR)/$(FILE))
 
-LOGGER_CPP_FILES := $(wildcard $(LOGGERSRC)/*.cpp)
-LOGGER_OBJS := $(patsubst $(SRC)/%.cpp, $(BUILD)/%.o, $(LOGGER_CPP_FILES))
+LOGGER_CPP_FILES := $(wildcard $(TRACELOGGER_SRC_DIR)/*.cpp)
+LOGGER_OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(LOGGER_CPP_FILES))
 
 
-#Confusing, I know, this is to build every plugin subdirectory
-PLUGINSRC := $(wildcard $(SRC)/$(PLUGINS)/*/.)
-
-.PHONY: all printerror $(PLUGINSRC) #Gotta run this regardless of timestamp on the folder, let the plugin Makefile handle things 
+.PHONY: listdlls debug release x64 x86 dirs print-build-cfg print-clean print-error clean $(PLUGINS_NAMES) $(BIN_DIR) $(BUILD_DIR) $(SHARED_DIR) $(PLUGINS_DIR) $(TRACELOGGER_BUILD_DIR)
 
 debug:
 	@$(MAKE) all || { $(MAKE) printerror; exit 1; }
@@ -172,16 +169,39 @@ release:
 	$(MAKE) BUILD_CONFIGURATION=release all || { $(MAKE) printerror; exit 1; }
 
 x64:
-	$(MAKE) clean all
+	$(MAKE) plugins BUILD_PLATFORM=x64 BUILD_CONFIGURATION=debug || { $(MAKE) printerror; exit 1; }
+	$(MAKE) plugins BUILD_PLATFORM=x64 BUILD_CONFIGURATION=release || { $(MAKE) printerror; exit 1; }
 
 x86:
-	$(MAKE) BUILD_PLATFORM=x86 all || { $(MAKE) printerror; exit 1; }
+	$(MAKE) plugins BUILD_PLATFORM=x86 BUILD_CONFIGURATION=debug || { $(MAKE) printerror; exit 1; }
+	$(MAKE) plugins BUILD_PLATFORM=x86 BUILD_CONFIGURATION=release || { $(MAKE) printerror; exit 1; }
+	
+dirs: $(BIN_DIR) $(BUILD_DIR) $(SHARED_DIR) $(PLUGINS_DIR) $(TRACELOGGER_BUILD_DIR)
 
-all: $(BIN_OUT) $(BUILD) $(SHARED) $(PLUGINS) printbeginbuild $(TARGET_OUT) $(PLUGINSRC)
+PLUGINS_NAMES := plugins/log plugins/ffxiv_pkt_log plugins/ffxiv_pkt_log_2
 
-printbeginbuild:
+plugins: 
+	$(MAKE) dirs
+	$(MAKE) ws
+	$(MAKE) $(PLUGINS_NAMES)
+
+plugins/log:
+	cd $(SRC_DIR)/$@ && $(MAKE)
+
+plugins/ffxiv_pkt_log:
+	cd $(SRC_DIR)/$@ && $(MAKE)
+
+plugins/ffxiv_pkt_log_2:
+	cd $(SRC_DIR)/$@ && $(MAKE)
+
+all:
+	$(MAKE) clean
+	$(MAKE) print-build-cfg
+	$(MAKE) plugins BUILD_PLATFORM=x86 BUILD_CONFIGURATION=debug || { $(MAKE) printerror; exit 1; }
+
+print-build-cfg:
 	@echo  "\n"
-	@echo "\033[5;32m ===== BUILD STARTED! =====\033[0m"
+	@echo "\033[5;32m ===== BUILD_DIR STARTED! =====\033[0m"
 	@echo "\033[2;93m platform..........: $(BUILD_PLATFORM)\033[0m"
 	@echo "\033[2;93m configuration.....: $(BUILD_CONFIGURATION)\033[0m"
 	@echo "\033[2;94m deja_insight......: $(DEJAINSIGHT_ENABLED)\033[0m"
@@ -191,56 +211,52 @@ printbeginbuild:
 	@echo "\033[2;96m defines...........: $(COMPILATION_PREPROCESSOR_DEFS)\033[0m"
 	@echo  "\n"
 
-printclean:
+print-clean:
 	@echo  "\n\n"
 	@echo "\033[2;36m==== ===================================== ====\033[0m"
 	@echo "\033[2;36m==== CLEANING BINARIES and TEMPORARY FILES ====\033[0m"
 	@echo  "\n"
 
-printerror:
+print-error:
 	@echo  "\n\n"
 	@echo "\033[5;31m==== COMPILATION ERROR OCCURED ====\033[0m"
 	@echo  "\n"
 
-
-plugin: $(PLUGINS) $(PLUGINSRC)
-
-ws: $(BUILD) $(SHARED) $(TARGET_OUT)
+ws:
+	$(MAKE) dirs
+	$(MAKE) $(WS_DLL)
 
 clean:
-	$(MAKE) printclean
-	rm -rf $(BIN_ROOT) $(BUILD) $(PLUGINS) $(SHARED) $(TARGET_OUT) *.dll
+	$(MAKE) print-clean
+	rm -rf $(BIN_ROOT) $(BUILD_DIR) $(PLUGINS_DIR) $(SHARED_DIR) $(WS_DLL) *.dll
 
 
-$(TARGET_OUT): $(O_OBJS) $(LOGGER_OBJS)
+$(WS_DLL): $(O_OBJS) $(LOGGER_OBJS)
 	$(COMPILR_BIN) -o $@ $(O_OBJS) $(LDFLAGS)
 
-$(BUILD)/%.o: $(SRC)/%.cpp
-	$(COMPILR_BIN) -c $(COMPILATION_FLAGS) $(SRC)/$*.cpp -o $@
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(COMPILR_BIN) -c $(COMPILATION_FLAGS) $(SRC_DIR)/$*.cpp -o $@
 
-$(SRC)/%.cpp: $(SRC)/%.h
+$(SRC_DIR)/%.cpp: $(SRC_DIR)/%.h
 
 #Plugins
-$(PLUGINSRC):
-	$(MAKE) -C $@ COMPILR_BIN="$(COMPILR_BIN)" COMPILATION_FLAGS="$(COMPILATION_FLAGS)" BUILD_PLATFORM="$(BUILD_PLATFORM)" BUILD_CONFIGURATION="$(BUILD_CONFIGURATION)" DEJAINSIGHT_ENABLED="$(DEJAINSIGHT_ENABLED)"
-
 
 #Make directories if necessary
-$(BUILD):
-	mkdir -p $(BUILD)
-	mkdir -p $(LOGGEROUT)
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+	mkdir -p $(TRACELOGGER_BUILD_DIR)
 
-$(PLUGINS):
-	mkdir -p $(PLUGINS)
+$(PLUGINS_DIR):
+	mkdir -p $(PLUGINS_DIR)
 	echo "# These libraries are build for the $(BUILD_PLATFORM) platform" > $(PLUGINS_BUILD_INFO)
 
 listdlls:
 	@echo "\033[5;31m==== COMPILED DLLS ====\033[0m"
 	@find "$(BASE)" -type f -iname "*.dll" | sed 's|$(BASE)/||'
 
-$(SHARED):
-	mkdir -p $(SHARED)
+$(SHARED_DIR):
+	mkdir -p $(SHARED_DIR)
 
-$(BIN_OUT):
-	mkdir -p $(BIN_OUT)
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 	

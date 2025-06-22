@@ -9,3 +9,8 @@ shared/**
 *.dll
 *.a
 *.o
+logs
+logs/**
+*.log
+version.nfo
+build.nfo
