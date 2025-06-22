@@ -87,8 +87,8 @@ STD := c++17
 
 COMPILATION_FLAGS := -std=$(STD) -I$(TRACELOGGER_SRC_DIR) -I$(INCLUDE_DIR) -fdata-sections -ffunction-sections -Wall -shared \
         -fkeep-inline-functions -fkeep-static-functions -fkeep-static-consts
-        
-COMPILATION_PREPROCESSOR_DEFS += -DTARGET_LINUX -DDEJA_TARGET_LINUX -D__linux -DCOMPILING_DLL
+#COMPILATION_PREPROCESSOR_DEFS := -DTARGET_LINUX -DDEJA_TARGET_LINUX -D__linux -DCOMPILING_DLL
+COMPILATION_PREPROCESSOR_DEFS := -D_WIN32 -DCOMPILING_DLL -DDEJA_DLL_EXPORT
 LINKING_LIBRARIES := -lwsock32 -liphlpapi -lpsapi -loleaut32
 LDFLAGS := -L$(LIB_DIR) -shared -Wl,--gc-sections -Wl,--out-implib,shared/lib$(TARGET).a -s
 
@@ -175,7 +175,7 @@ x64:
 x86:
 	$(MAKE) plugins BUILD_PLATFORM=x86 BUILD_CONFIGURATION=debug || { $(MAKE) printerror; exit 1; }
 	$(MAKE) plugins BUILD_PLATFORM=x86 BUILD_CONFIGURATION=release || { $(MAKE) printerror; exit 1; }
-	
+
 dirs: $(BIN_DIR) $(BUILD_DIR) $(SHARED_DIR) $(PLUGINS_DIR) $(TRACELOGGER_BUILD_DIR)
 
 PLUGINS_NAMES := plugins/log plugins/ffxiv_pkt_log plugins/ffxiv_pkt_log_2
@@ -197,7 +197,7 @@ plugins/ffxiv_pkt_log_2:
 all:
 	$(MAKE) clean
 	$(MAKE) print-build-cfg
-	$(MAKE) plugins BUILD_PLATFORM=x86 BUILD_CONFIGURATION=debug || { $(MAKE) printerror; exit 1; }
+	$(MAKE) plugins BUILD_PLATFORM=x64 BUILD_CONFIGURATION=debug || { $(MAKE) printerror; exit 1; }
 
 print-build-cfg:
 	@echo  "\n"

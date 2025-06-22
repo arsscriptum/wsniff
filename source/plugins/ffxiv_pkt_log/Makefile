@@ -2,12 +2,12 @@ TARGET := ffxiv_pkt_log
 SOURCE := log
 TARGET_TYPE := dll
 PLUGIN_TYPE := dll
-BUILD_PLATFORM := x64
-BUILD_CONFIGURATION := debug
-DEJAINSIGHT_ENABLED := no
-COMPILER := cpp
+BUILD_PLATFORM ?= x64
+BUILD_CONFIGURATION ?= debug
+DEJAINSIGHT_ENABLED ?= yes
+COMPILER ?= cpp
+PARALLEL_BUILD ?= yes
 NUM_PROCS := $(shell nproc)
-PARALLEL_BUILD := no
 BASE := $(realpath ../../..)
 SHARED_DIR := $(BASE)/shared
 SRC_DIR := $(BASE)/source
@@ -66,7 +66,8 @@ STD := c++17
 
 COMPILATION_FLAGS := -I$(INCLUDE_DIR) -I$(TRACELOGGER_SRC_DIR) -I$(SRC_DIR) -std=$(STD) -O3 -fdata-sections -ffunction-sections -flto -Wall -I$(INCLUDE_DIR) -I$(SOURCE_DIR) -I../..
       
-COMPILATION_PREPROCESSOR_DEFS += -DTARGET_LINUX -DDEJA_TARGET_LINUX -D__linux -DCOMPILING_DLL -DRECORD_TO_FILE
+COMPILATION_PREPROCESSOR_DEFS ?= -DTARGET_LINUX -DDEJA_TARGET_LINUX -D__linux -DCOMPILING_DLL -DRECORD_TO_FILE
+
 LINKING_LIBRARIES := -loleaut32 -lws2_32 -lws -lz
 LDFLAGS := -static -shared -Wl,--gc-sections -s -L$(BASE)/shared/ 
 
