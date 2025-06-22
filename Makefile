@@ -13,7 +13,8 @@ SOURCE := ws misc plugins
 NUM_PROCS := $(shell nproc)
 
 # Paths
-BASE := .
+PARENT := $(realpath ..)
+BASE := $(PARENT)/wsniff
 BUILD := $(BASE)/build
 PLUGINS := $(BASE)/plugins
 SHARED := $(BASE)/shared
@@ -232,6 +233,10 @@ $(BUILD):
 $(PLUGINS):
 	mkdir -p $(PLUGINS)
 	echo "# These libraries are build for the $(BUILD_PLATFORM) platform" > $(PLUGINS_BUILD_INFO)
+
+listdlls:
+	@echo "\033[5;31m==== COMPILED DLLS ====\033[0m"
+	@find "$(BASE)" -type f -iname "*.dll" | sed 's|$(BASE)/||'
 
 $(SHARED):
 	mkdir -p $(SHARED)
